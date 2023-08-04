@@ -1,0 +1,23 @@
+stages:
+  - terraform
+  - eks
+
+variables:
+  AWS_REGION: "me-south-1"
+  AWS_ACCESS_KEY_ID: "$AWS_ACCESS_KEY_ID"
+  AWS_SECRET_ACCESS_KEY: "$AWS_SECRET_ACCESS_KEY"
+
+before_script:
+  # Install AWS CLI
+  - apt-get update -qy
+  - apt-get install -y awscli
+
+terraform:
+  stage: terraform
+  image: hashicorp/terraform:latest
+  script:
+    - cd .
+    - terraform init
+    - terraform plan -out=tfplan
+  only:
+    - master

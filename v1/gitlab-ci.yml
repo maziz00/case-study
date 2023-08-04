@@ -1,0 +1,59 @@
+stages:
+  - terraform
+
+variables:
+  AWS_DEFAULT_REGION: "me-south-1"
+  TERRAFORM_VERSION: "1.0.9"
+
+before_script:
+  - apt-get update -qy
+  - apt-get install -y unzip
+  - wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+  - unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+  - mv terraform /usr/local/bin/
+
+terraform:
+  stage: terraform
+  image: hashicorp/terraform:${TERRAFORM_VERSION}
+  script:
+    # Set up AWS credentials
+    - echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> ~/.env
+    - echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> ~/.env
+    - echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.env
+    - echo "AWS_REGION=$AWS_DEFAULT_REGION" >> ~/.env
+    - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    - export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
+    - export AWS_REGION=$AWS_DEFAULT_REGION
+    
+    # Initialize Terraform
+    - terraform init
+
+    # Plan the Terraform deployment
+    - terraform plan -out=tfplan
+
+    # Apply the Terraform changes to create the EKS cluster
+    - terraform apply -auto-approve tfplan
+
+    # Output the EKS cluster details
+    - terraform output -json > eks_cluster_output.json
+    - cat eks_cluster_output.json
+
+    # # Install the AWS CLI to configure kubectl
+    # - apt-get install -y curl
+    # - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    # - unzip awscliv2.zip
+    # - sudo ./aws/install
+
+    # # Configure kubectl with EKS cluster details
+    # - aws eks update-kubeconfig --name $(terraform output -json | jq -r '.eks_cluster_name.value')
+
+    # # Install and configure kubectl
+    # - apt-get install -y kubectl
+    # - kubectl version --client
+
+    # # Verify the EKS cluster is ready
+    # - kubectl get nodes
+
+  only:
+    - master

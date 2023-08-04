@@ -1,0 +1,21 @@
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  annotations:
+    velero.io/source-cluster-k8s-major-version: "1"
+    velero.io/source-cluster-k8s-minor-version: 17+
+  labels:
+    velero.io/storage-location: aws
+  name: prometheus-grafana-velero-schedule
+  namespace: velero
+spec:
+  schedule: "30 23 * * 1-5"
+  template:
+    hooks: {}
+    includedNamespaces:
+    - monitoring
+    storageLocation: aws 
+    ttl: 336h0m0s
+    volumeSnapshotLocations:
+    - aws
+    snapshotVolumes: true
